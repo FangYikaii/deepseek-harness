@@ -1,0 +1,3 @@
+- insert:
+    - id: greet-tool
+      name: 'C:/Users/34236/Desktop/deepseek-harness/scratch-plugin/src/greet-tool.ts'
