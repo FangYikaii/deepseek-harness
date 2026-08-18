@@ -270,6 +270,12 @@
     - id: ui-user-questions
       name: '@deepseek-ai/dsh-client-ui-user-questions'
 
+    # Opt-in full-viewport watermark background. Disabled by default so the
+    # shipped page keeps its clean shell; enable it in a profile overlay.
+    - id: ui-background
+      name: '@deepseek-ai/dsh-client-ui-background'
+      disabled: true
+
     - id: ui-trajectory
       name: '@deepseek-ai/dsh-client-ui-trajectory'
 
