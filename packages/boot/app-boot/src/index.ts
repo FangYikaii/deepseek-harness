@@ -489,19 +489,22 @@ export async function mountRootInclude(
   patches: readonly PatchOptions[] = [],
   bareModuleBaseUrl?: string,
 ): Promise<Entry | undefined> {
-  ctx.loader.builtins.include = bareModuleBaseUrl === undefined
-    ? Include
-    : class HostResolvedRootInclude extends Include {
-      override import(name: string, getOuterStack?: () => string[]): unknown {
-        const specifier = isAbsolute(name) ? pathToFileURL(name).href : name
-        if (name.startsWith('.') || name.startsWith('cordis:')) return super.import(specifier, getOuterStack)
-        const internal = this.ctx.loader.internal
-        /* v8 ignore next -- Node supplies the internal loader; this preserves the
-           original diagnostic for hypothetical embedders without it. */
-        if (internal === undefined) return super.import(specifier, getOuterStack)
-        return internal.import(specifier, bareModuleBaseUrl, {})
+  ctx.loader.builtins.include = class HostResolvedRootInclude extends Include {
+    override import(name: string, getOuterStack?: () => string[]): unknown {
+      // An absolute entry name must reach the ESM pipeline as a file URL:
+      // Node accepts a raw POSIX absolute path but rejects a Windows drive
+      // path (parsed as a `c:` URL scheme).
+      const specifier = isAbsolute(name) ? pathToFileURL(name).href : name
+      if (name.startsWith('.') || name.startsWith('cordis:') || bareModuleBaseUrl === undefined) {
+        return super.import(specifier, getOuterStack)
       }
+      const internal = this.ctx.loader.internal
+      /* v8 ignore next -- Node supplies the internal loader; this preserves the
+         original diagnostic for hypothetical embedders without it. */
+      if (internal === undefined) return super.import(specifier, getOuterStack)
+      return internal.import(specifier, bareModuleBaseUrl, {})
     }
+  }
   // `cordis:group` alongside it: a group row is how a composition gives one
   // `isolate` realm to a provider and its consumers together, and an agent
   // preset living outside this workspace cannot resolve `@deepseek-ai/cordis-plugin-group`

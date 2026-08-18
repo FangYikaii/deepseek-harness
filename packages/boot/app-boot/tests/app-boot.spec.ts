@@ -625,6 +625,26 @@ describe('boot', () => {
     }
   })
 
+  it('imports an absolute-path entry name as a file URL without a host module base', async () => {
+    // The default boot path (no bareModuleBaseUrl) must still convert an
+    // absolute entry name to a file URL: Node accepts a raw POSIX absolute
+    // path but rejects a Windows drive path (parsed as a `c:` URL scheme).
+    const dir = tmp()
+    const absolutePlugin = join(dir, 'absolute.mjs')
+    writeFileSync(absolutePlugin, 'export function apply(ctx) { ctx.provide("absolutePluginLoaded", true) }\n')
+    writeFileSync(join(dir, 'cordis.yml'), [
+      '- id: absolute',
+      `  name: ${JSON.stringify(absolutePlugin)}`,
+      '',
+    ].join('\n'))
+    const ctx = await boot(NAME, join(dir, 'cordis.yml'))
+    try {
+      expect(ctx.get('absolutePluginLoaded')).toBe(true)
+    } finally {
+      await ctx.fiber.dispose()
+    }
+  })
+
   it('runs host preparation before the Loader tree mounts', async () => {
     const dir = tmp()
     writeFileSync(join(dir, 'noop.mjs'), 'export const name = "noop"\nexport function apply() {}\n')
